@@ -1,38 +1,118 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Telegram Web App</title>
-  <!-- Подключаем SDK Telegram Web App -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Antarctic Wallet Mini App</title>
+  <!-- 1. Подключаем Telegram Web App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script> <!-- :contentReference[oaicite:0]{index=0} -->
+  <!-- 2. Подключаем стили -->
+  <link rel="stylesheet" href="style.css">
   <style>
-    /* Простейшие стили для примера */
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: Arial, sans-serif;
-    }
-    #status {
-      color: #333;
-    }
+    /* Минимальные inline-стили на случай, если style.css отсутствует */
+    body { margin:0; font-family:Arial, sans-serif; background:#f5f7fa; }
+    header { background:#00416a; color:#fff; padding:1rem; display:flex; align-items:center; }
+    header img { height:32px; margin-right:0.5rem; }
+    .container { padding:1rem; }
+    .balance { font-size:1.5rem; margin:1rem 0; }
+    .btn { display:inline-flex; align-items:center; padding:0.75rem 1.5rem; margin-right:1rem;
+           border:none; border-radius:8px; background:#0066cc; color:#fff; cursor:pointer; }
+    .btn img { height:20px; margin-right:0.5rem; }
+    .tx-list { list-style:none; padding:0; margin:1rem 0; }
+    .tx-item { background:#fff; padding:0.75rem; border-radius:6px; margin-bottom:0.5rem;
+               box-shadow:0 1px 3px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
-  <h1>Пустое мини-приложение</h1>
-  <p id="status">Инициализация...</p>
+  <header>
+    <img src="assets/logo.png" alt="Logo">
+    <h1>Antarctic Wallet</h1>
+  </header>
 
+  <div class="container">
+    <!-- Баланс пользователя -->
+    <div class="balance">Баланс: <span id="balance">—</span> TON</div>
+
+    <!-- Кнопки действий -->
+    <button class="btn" id="sendBtn">
+      <img src="assets/send.svg" alt=""> Отправить
+    </button>
+    <button class="btn" id="receiveBtn">
+      <img src="assets/receive.svg" alt=""> Получить
+    </button>
+
+    <!-- Список транзакций -->
+    <h2>История транзакций</h2>
+    <ul class="tx-list" id="txList">
+      <li>Загрузка...</li>
+    </ul>
+  </div>
+
+  <!-- Логика приложения -->
   <script>
-    // Дожидаемся, пока WebApp будет готов
-    Telegram.WebApp.ready();
+    // 3. Уведомляем Telegram, что приложение готово
+    Telegram.WebApp.ready();                                // :contentReference[oaicite:1]{index=1}
 
-    // Пример использования API: получить initData (можно послать на сервер для верификации)
-    const initData = Telegram.WebApp.initData;
-    document.getElementById('status').textContent =
-      'WebApp готов! initData получены.';
+    // 4. Получаем initData для идентификации сессии на сервере
+    const initData = Telegram.WebApp.initData;              // :contentReference[oaicite:2]{index=2}
 
-    // При необходимости можно менять размеры
-    // Telegram.WebApp.expand(); // разворачивает на всю высоту    
+    // 5. Вспомогательная функция для запросов к вашему бэкенду
+    async function api(path, data) {
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData, ...data })
+      });
+      return res.json();
+    }
+
+    // 6. Загрузка баланса и истории
+    async function loadData() {
+      try {
+        // a) Запрашиваем баланс
+        const { balance } = await api('/api/balance');      // :contentReference[oaicite:3]{index=3}
+        document.getElementById('balance').textContent = balance;
+
+        // b) Запрашиваем историю
+        const { txs } = await api('/api/transactions');     // :contentReference[oaicite:4]{index=4}
+        const list = document.getElementById('txList');
+        list.innerHTML = '';
+        if (!txs.length) {
+          list.innerHTML = '<li>Нет транзакций</li>';
+        } else {
+          txs.forEach(tx => {
+            const li = document.createElement('li');
+            li.className = 'tx-item';
+            li.textContent = `${tx.date}: ${tx.amount} TON — ${tx.type}`;
+            list.appendChild(li);
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('txList').innerHTML = '<li>Ошибка загрузки данных</li>';
+      }
+    }
+
+    // 7. Обработчики кнопок
+    document.getElementById('sendBtn').onclick = () => {
+      // Открываем встроенную кнопку Telegram для подтверждения
+      Telegram.WebApp.MainButton.setText('Подтвердить отправку');  // :contentReference[oaicite:5]{index=5}
+      Telegram.WebApp.MainButton.show();                          // :contentReference[oaicite:6]{index=6}
+      Telegram.WebApp.MainButton.onClick(async () => {
+        await api('/api/send', { /* данные о переводе */ });
+        Telegram.WebApp.showToast('Отправлено!');               // :contentReference[oaicite:7]{index=7}
+        Telegram.WebApp.MainButton.hide();
+        loadData();
+      });
+    };
+
+    document.getElementById('receiveBtn').onclick = () => {
+      // Здесь можно показать QR-код или ссылку для получения
+      alert('Ваш адрес: ' + (localStorage.getItem('walletAddress') || '—'));
+    };
+
+    // 8. Инициализируем загрузку при старте
+    loadData();
   </script>
 </body>
 </html>
