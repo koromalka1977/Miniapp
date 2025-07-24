@@ -169,18 +169,8 @@
     </div>
   </nav>
 
-  <script>
-    // Инициализация Telegram WebApp
-    Telegram.WebApp.ready();
+  <!-- Подключаем основной скрипт -->
+  <script src="script.js" defer></script>               <!-- :contentReference[oaicite:7]{index=7} -->
 
-    // Логика скрытия/показа баланса
-    const eye = document.getElementById('toggleEye');
-    const balanceEl = document.getElementById('balanceValue');
-    let visible = true;
-    eye.onclick = () => {
-      visible = !visible;
-      balanceEl.textContent = visible ? '0.0' : '•••';
-    };
-  </script>
 </body>
 </html>
