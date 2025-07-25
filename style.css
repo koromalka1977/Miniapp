@@ -1,2 +1,80 @@
-.page { display: none; }
+/* Общие правила для секций */
+.page { display: none; padding: 16px; }
 .page.active { display: block; }
+
+/* Контейнер истории */
+.history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Карточка транзакции */
+.tx-card {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.tx-icon {
+  width: 40px; height: 40px;
+  background: #E6F0FF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  color: #0066FF;
+}
+.tx-info {
+  flex: 1;
+}
+.tx-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1A1F32;
+}
+.tx-sub {
+  font-size: 14px;
+  color: #7A8199;
+}
+.tx-values {
+  text-align: right;
+}
+.tx-amount-negative {
+  font-size: 16px;
+  color: #1A1F32;
+}
+.tx-token-negative {
+  font-size: 14px;
+  color: #7A8199;
+}
+
+/* Сообщение пустой истории */
+.history-empty {
+  text-align: center;
+  font-size: 14px;
+  color: #7A8199;
+  margin: 24px 0;
+}
+
+/* Кнопка «Пополнить кошелёк» */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #0066FF;
+  color: #FFF;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 0 auto;
+}
+.btn-primary svg {
+  width: 20px;
+  height: 20px;
+}

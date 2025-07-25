@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MiniApp Home</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="style.css">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Arial', sans-serif; background: #F0F4FF; color: #1A1F32; padding-bottom: 70px; }
@@ -210,7 +210,44 @@
   </nav>
   <!-- Секции-экраны -->
 <section id="page-home" class="page">Home Content</section>
-<section id="page-history" class="page" style="display:none">History Content</section>
+<!-- Экран «История» -->
+<section id="page-history" class="page">
+  <div class="history-container">
+    <!-- Пример одной транзакции -->
+    <div class="tx-card">
+      <div class="tx-icon">
+        <!-- иконка покупки -->
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2l3 9h6l3-9z"/>
+          <path d="M6 11h12v11H6z"/>
+        </svg>
+      </div>
+      <div class="tx-info">
+        <div class="tx-title">Покупка</div>
+        <div class="tx-sub">Супермаркет</div>
+      </div>
+      <div class="tx-values">
+        <div class="tx-amount-negative">− 90 000 ₽</div>
+        <div class="tx-token-negative">− 900.00 USDT</div>
+      </div>
+    </div>
+    <!-- При пустой истории -->
+    <div class="history-empty">
+      Здесь будут отображаться все ваши финансовые операции
+    </div>
+    <!-- Кнопка пополнения -->
+    <button class="btn-primary" id="history-topup">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5"  y1="12" x2="19" x2="12"/>
+      </svg>
+      Пополнить кошелёк
+    </button>
+  </div>
+</section>
+
 <section id="page-scan" class="page" style="display:none">Scan Content</section>
 <section id="page-browser" class="page" style="display:none">Browser Content</section>
 <section id="page-profile" class="page" style="display:none">Profile Content</section>
