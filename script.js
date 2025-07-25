@@ -53,5 +53,26 @@ Telegram.WebApp.onEvent('scanQrPopupClosed', () => {             // :contentRefe
   console.log('Сканер был закрыт без сканирования');
 });
 
+// Навигация по пунктам нижнего меню
+const navItems = document.querySelectorAll('.nav-item');      // 
+const pages    = document.querySelectorAll('.page');          // 
+
+navItems.forEach(item => {
+  item.addEventListener('click', () => {                      // 
+    const pageName = item.dataset.page;                      
+    
+    // 1. Снимаем active с меню
+    navItems.forEach(i => i.classList.remove('active'));
+    // 2. Делаем кликнутый пункт активным
+    item.classList.add('active');
+
+    // 3. Скрываем все страницы
+    pages.forEach(p => p.classList.remove('active'));
+    // 4. Показываем нужную
+    const pageEl = document.getElementById(`page-${pageName}`);
+    if (pageEl) pageEl.classList.add('active');
+  });
+});
+
 
 // …и так далее для остальных функций (меню, кнопки, API-запросы)

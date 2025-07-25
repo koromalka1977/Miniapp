@@ -175,7 +175,7 @@
       </svg>
       <div>Home</div>
     </div>
-    <div class="nav-item">
+    <div class="nav-item" data-page="history">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="history">
         <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
         <path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>
@@ -207,6 +207,13 @@
       <div>Profile</div>
     </div>
   </nav>
+  <!-- Секции-экраны -->
+<section id="page-home" class="page">Home Content</section>
+<section id="page-history" class="page" style="display:none">History Content</section>
+<section id="page-scan" class="page" style="display:none">Scan Content</section>
+<section id="page-browser" class="page" style="display:none">Browser Content</section>
+<section id="page-profile" class="page" style="display:none">Profile Content</section>
+
 
   <!-- Подключаем основной скрипт -->
   <script src="script.js" defer></script>               <!-- :contentReference[oaicite:7]{index=7} -->
