@@ -74,5 +74,130 @@ navItems.forEach(item => {
   });
 });
 
+// === Балансы пользователя (пример) ===
+// Поставь тут реальное значение баланса в USDT (можно позже получать с бэкенда):
+const balances = {
+  usdt: 125.50,  // <-- твой "некоторый баланс" в USDT
+  ton: 0
+};
+
+// === Элементы USDT на карточке ===
+const usdtRateEl      = document.getElementById('usdtRate');
+const usdtFiatValueEl = document.getElementById('usdtFiatValue');
+const usdtBalanceEl   = document.getElementById('usdtBalance');
+
+// Форматирование
+const fmtRub = n => `${(n ?? 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽`;
+const fmtNum = n => (n ?? 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// Курс USD/RUB по ЦБ (используем как USDT/RUB)
+let usdRub = 0;
+
+// Получение курса ЦБ РФ (daily_json.js)
+async function fetchUsdRubFromCBR() {
+  // ЦБ обновляет курсы 1 раз в день; cache: 'no-store' — чтобы не залипало в кэше WebView
+  const resp = await fetch('https://www.cbr-xml-daily.ru/daily_json.js', { cache: 'no-store' });
+  const data = await resp.json();
+  // Берём официальный курс доллара (USDT ≈ USD)
+  const v = data?.Valute?.USD?.Value;
+  if (typeof v === 'number') usdRub = v;
+}
+
+// Перерисовка
+function renderMoney() {
+  // Подпись под USDT — курс 1 USDT в рублях по ЦБ
+  if (usdRub > 0) usdtRateEl.textContent = fmtRub(usdRub);
+
+  // Правый столбец USDT
+  usdtBalanceEl.textContent   = `${fmtNum(balances.usdt)} USDT`;
+  usdtFiatValueEl.textContent = fmtRub(balances.usdt * usdRub);
+
+  // Total balance — суммарно в рублях (пока только USDT)
+  const totalRub = balances.usdt * usdRub; // + balances.ton * tonRub (если добавишь курс TON)
+  balanceEl.textContent = visible ? fmtNum(totalRub) : '•••';
+}
+
+// Обновляем курс и экран
+async function refresh() {
+  try {
+    await fetchUsdRubFromCBR();
+  } catch (e) {
+    console.error('Ошибка получения курса ЦБ:', e);
+  } finally {
+    renderMoney();
+  }
+}
+
+// Обновление по таймеру (например, раз в минуту)
+refresh();
+setInterval(refresh, 60_000);
+
+// Обновляем обработчик «глазика», чтобы он скрывал/показывал уже посчитанный Total
+eye.addEventListener('click', () => {
+  visible = !visible;
+  renderMoney();
+});
+
+
+
+// === 0) Укажите адрес вашего бэкенда (HTTPS!):
+//const API_BASE = 'https://<ВАШ-ДОМЕН-БЭКЕНДА>'; // например, https://my-miniapp-api.onrender.com
+
+// Универсальный POST к вашему API с подписью Telegram
+//async function api(path, body = {}) {
+  //const r = await fetch(`${API_BASE}${path}`, {
+    //method: 'POST',
+    //headers: { 'Content-Type': 'application/json' },
+    //body: JSON.stringify({ initData: Telegram.WebApp.initData, ...body }),
+  //});
+  //if (!r.ok) throw new Error(await r.text());
+  //return r.json();
+//}
+
+// === 1) Сканер → заявка оператору → опрос статуса ===
+//document.getElementById('scanBtn').addEventListener('click', () => {
+  //Telegram.WebApp.showScanQrPopup({ text: 'Сканируйте SBP-QR' });
+//});
+
+//Telegram.WebApp.onEvent('qrTextReceived', async ({ data }) => {
+  //try {
+    //Telegram.WebApp.closeScanQrPopup();
+    //if (!/^https?:\/\/qr\.nspk\.ru\//i.test(data)) {
+      //return Telegram.WebApp.showPopup({ title: 'Не платёжный QR', message: data.slice(0,200) });
+    //}
+    // Сумма (если её нет в QR — спросим вручную)
+    //const amountStr = prompt('Введите сумму чека, ₽ (например 990.00)');
+    //if (!amountStr) return;
+    //const amountKop = Math.round(parseFloat(amountStr.replace(',', '.')) * 100);
+
+    // 1) создаём ЗАЯВКУ и ставим hold на внутреннем балансе
+    //const { requestId, holdId } = await api('/api/approvals/create', {
+      //amount: amountKop,
+      //sbpLink: data,
+      //note: 'Покупка в магазине по SBP',
+    //});
+
+    //Telegram.WebApp.showPopup({ title: 'Отправлено оператору', message: 'Ожидаем подтверждения оплаты.' });
+
+    // 2) поллим статус (можно заменить на WebSocket/SSE)
+    //const timer = setInterval(async () => {
+      //const { status } = await api('/api/approvals/status', { requestId });
+      //if (status === 'APPROVED') {
+        //clearInterval(timer);
+        //await api('/api/balance/commit', { holdId });
+        //Telegram.WebApp.showToast('Оплата подтверждена. Баланс списан.');
+      //}
+      //if (status === 'REJECTED' || status === 'EXPIRED') {
+        //clearInterval(timer);
+        //await api('/api/balance/release', { holdId });
+        //Telegram.WebApp.showToast('Отклонено. Бронь снята.');
+      //}
+    //}, 3000);
+  //} catch (e) {
+    //console.error(e);
+    //Telegram.WebApp.showPopup({ title: 'Ошибка', message: 'Не удалось обработать QR' });
+  //}
+//});
+
 
 // …и так далее для остальных функций (меню, кнопки, API-запросы)
