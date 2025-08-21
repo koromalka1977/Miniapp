@@ -1,142 +1,127 @@
 // Ждём, пока Telegram SDK будет готов
-Telegram.WebApp.ready();                            // :contentReference[oaicite:3]{index=3}
+Telegram.WebApp.ready();
 
 // Получаем профиль пользователя
-const user = Telegram.WebApp.initDataUnsafe.user;   // :contentReference[oaicite:4]{index=4}
+const user = Telegram.WebApp.initDataUnsafe.user;
 
 // Находим элементы по id
-const avatarEl  = document.getElementById('avatarImg');    // :contentReference[oaicite:5]{index=5}
+const avatarEl  = document.getElementById('avatarImg');
 const nameEl    = document.getElementById('userName');
 const eye       = document.getElementById('toggleEye');
 const balanceEl = document.getElementById('balanceValue');
 
 // Заполняем данные пользователя
-if (user.photo_url) {
+if (user?.photo_url) {
   avatarEl.src = user.photo_url;
 } else {
   avatarEl.src = 'assets/default-avatar.png';
 }
-nameEl.textContent = user.username 
-  ? '@' + user.username 
-  : `${user.first_name || ''} ${user.last_name || ''}`.trim();
+nameEl.textContent = user?.username
+  ? '@' + user.username
+  : `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
 
 // Логика показа/скрытия баланса
 let visible = true;
-eye.addEventListener('click', () => {                   // :contentReference[oaicite:6]{index=6}
+
+// Клик по «глазику» — просто перерисовываем суммы (не затираем 0.0)
+eye.addEventListener('click', () => {
   visible = !visible;
-  balanceEl.textContent = visible ? '0.0' : '•••';
+  renderMoney();
 });
 
-// 1. Находим кнопку Scan по id
+// === Кнопка Scan ===
 const scanBtn = document.getElementById('scanBtn');
-
-// 2. Вешаем обработчик клика
-scanBtn.addEventListener('click', () => {                       // :contentReference[oaicite:7]{index=7} :contentReference[oaicite:8]{index=8}
-  // 3. Открываем нативный QR-сканер с подсказкой
-  Telegram.WebApp.showScanQrPopup({                              // :contentReference[oaicite:9]{index=9} :contentReference[oaicite:10]{index=10}
-    text: 'Сканируйте QR-код для оплаты'
-  }).catch(err => console.error('Не удалось открыть сканер:', err));
+scanBtn.addEventListener('click', () => {
+  Telegram.WebApp.showScanQrPopup({ text: 'Сканируйте QR-код для оплаты' })
+    .catch(err => console.error('Не удалось открыть сканер:', err));
 });
-
-// 4. Обработка успешного сканирования
-Telegram.WebApp.onEvent('qrTextReceived', ({ data }) => {        // :contentReference[oaicite:11]{index=11}
+Telegram.WebApp.onEvent('qrTextReceived', ({ data }) => {
   console.log('QR-код отсканирован, данные:', data);
-
-  // Например, закрываем сканер и запускаем оплату
-  Telegram.WebApp.closeScanQrPopup();                            // :contentReference[oaicite:12]{index=12}
-
-  // TODO: здесь ваш код для обработки data (например, openInvoice)
+  Telegram.WebApp.closeScanQrPopup();
+  // TODO: здесь ваш код обработки data (например, openInvoice)
 });
-
-// 5. (Опционально) Обработка отмены сканера
-Telegram.WebApp.onEvent('scanQrPopupClosed', () => {             // :contentReference[oaicite:13]{index=13}
+Telegram.WebApp.onEvent('scanQrPopupClosed', () => {
   console.log('Сканер был закрыт без сканирования');
 });
 
-// Навигация по пунктам нижнего меню
-const navItems = document.querySelectorAll('.nav-item');      // 
-const pages    = document.querySelectorAll('.page');          // 
-
+// === Навигация по нижнему меню ===
+const navItems = document.querySelectorAll('.nav-item');
+const pages    = document.querySelectorAll('.page');
 navItems.forEach(item => {
-  item.addEventListener('click', () => {                      // 
-    const pageName = item.dataset.page;                      
-    
-    // 1. Снимаем active с меню
+  item.addEventListener('click', () => {
+    const pageName = item.dataset.page;
     navItems.forEach(i => i.classList.remove('active'));
-    // 2. Делаем кликнутый пункт активным
     item.classList.add('active');
-
-    // 3. Скрываем все страницы
     pages.forEach(p => p.classList.remove('active'));
-    // 4. Показываем нужную
     const pageEl = document.getElementById(`page-${pageName}`);
     if (pageEl) pageEl.classList.add('active');
   });
 });
 
-// === Балансы пользователя (пример) ===
-// Поставь тут реальное значение баланса в USDT (можно позже получать с бэкенда):
-const balances = {
-  usdt: 125.50,  // <-- твой "некоторый баланс" в USDT
-  ton: 0
-};
+// ==================== КУРС ЦБ + БАЛАНС USDT ====================
 
-// === Элементы USDT на карточке ===
-const usdtRateEl      = document.getElementById('usdtRate');
-const usdtFiatValueEl = document.getElementById('usdtFiatValue');
-const usdtBalanceEl   = document.getElementById('usdtBalance');
+// Элементы карточки USDT
+const usdtRateEl      = document.getElementById('usdtRate');       // подпись «— ₽» под USDT
+const usdtFiatValueEl = document.getElementById('usdtFiatValue');  // справа, верхняя строка (₽)
+const usdtBalanceEl   = document.getElementById('usdtBalance');    // справа, нижняя строка (USDT)
 
 // Форматирование
 const fmtRub = n => `${(n ?? 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽`;
 const fmtNum = n => (n ?? 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-// Курс USD/RUB по ЦБ (используем как USDT/RUB)
-let usdRub = 0;
+// Тестовые балансы по пользователю (можно по username или по user.id)
+const userUsdtByUsername = {
+  // Пример «персонального» баланса:
+  'Alexsasasss': 321.45
+};
+const defaultUsdt = 125.50;
 
-// Получение курса ЦБ РФ (daily_json.js)
+// Итоговый мок баланса
+const balances = {
+  usdt: (user && userUsdtByUsername[user.username]) ?? defaultUsdt,
+  ton: 0
+};
+
+// Курс USD/RUB по ЦБ РФ (используем как USDT/RUB)
+let usdRub = Number(localStorage.getItem('usdRub')) || 0;
+
+// Получение курса: 1 USD (≈ 1 USDT) в рублях по ЦБ
 async function fetchUsdRubFromCBR() {
-  // ЦБ обновляет курсы 1 раз в день; cache: 'no-store' — чтобы не залипало в кэше WebView
   const resp = await fetch('https://www.cbr-xml-daily.ru/daily_json.js', { cache: 'no-store' });
+  if (!resp.ok) throw new Error('CBR fetch failed');
   const data = await resp.json();
-  // Берём официальный курс доллара (USDT ≈ USD)
   const v = data?.Valute?.USD?.Value;
-  if (typeof v === 'number') usdRub = v;
-}
-
-// Перерисовка
-function renderMoney() {
-  // Подпись под USDT — курс 1 USDT в рублях по ЦБ
-  if (usdRub > 0) usdtRateEl.textContent = fmtRub(usdRub);
-
-  // Правый столбец USDT
-  usdtBalanceEl.textContent   = `${fmtNum(balances.usdt)} USDT`;
-  usdtFiatValueEl.textContent = fmtRub(balances.usdt * usdRub);
-
-  // Total balance — суммарно в рублях (пока только USDT)
-  const totalRub = balances.usdt * usdRub; // + balances.ton * tonRub (если добавишь курс TON)
-  balanceEl.textContent = visible ? fmtNum(totalRub) : '•••';
-}
-
-// Обновляем курс и экран
-async function refresh() {
-  try {
-    await fetchUsdRubFromCBR();
-  } catch (e) {
-    console.error('Ошибка получения курса ЦБ:', e);
-  } finally {
-    renderMoney();
+  if (typeof v === 'number') {
+    usdRub = v;
+    localStorage.setItem('usdRub', String(usdRub));
   }
 }
 
-// Обновление по таймеру (например, раз в минуту)
-refresh();
-setInterval(refresh, 60_000);
+// Отрисовка всех сумм
+function renderMoney() {
+  // Подпись под USDT — курс
+  if (usdtRateEl) usdtRateEl.textContent = usdRub > 0 ? fmtRub(usdRub) : '— ₽';
 
-// Обновляем обработчик «глазика», чтобы он скрывал/показывал уже посчитанный Total
-eye.addEventListener('click', () => {
-  visible = !visible;
+  // Справа от USDT
+  if (usdtBalanceEl)   usdtBalanceEl.textContent   = `${fmtNum(balances.usdt)} USDT`;
+  if (usdtFiatValueEl) usdtFiatValueEl.textContent = usdRub > 0 ? fmtRub(balances.usdt * usdRub) : '— ₽';
+
+  // Total balance — сумма в ₽ по курсу ЦБ (пока учитываем только USDT)
+  const totalRub = usdRub > 0 ? balances.usdt * usdRub : 0;
+  balanceEl.textContent = visible ? fmtNum(totalRub) : '•••';
+}
+
+// Обновление курса и экрана
+async function refresh() {
+  try { await fetchUsdRubFromCBR(); } catch (e) { console.error('Ошибка получения курса ЦБ:', e); }
   renderMoney();
-});
+}
+
+// Первичный рендер и периодическое обновление (ЦБ раз в день, но опросим раз в 10 мин)
+renderMoney();
+refresh();
+setInterval(refresh, 10 * 60 * 1000);
+
 
 
 
